@@ -1,5 +1,5 @@
 <?php
-namespace trello\V1\Rest\Board;
+namespace trello\V1\Rest\Task;
 
 use Laminas\ApiTools\ApiProblem\ApiProblem;
 use Laminas\ApiTools\Rest\AbstractResourceListener;
@@ -8,8 +8,9 @@ use stdClass;
 
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: *");
 
-class BoardResource extends AbstractResourceListener
+class TaskResource extends AbstractResourceListener
 {
 
     private $mongo;
@@ -26,7 +27,12 @@ class BoardResource extends AbstractResourceListener
      */
     public function create($data)
     {
-        return new ApiProblem(405, 'The POST method has not been defined');
+        $collection = $this->mongo->trello->test;
+
+        $collection->updateOne(
+          ["id" => $data->id],
+          ['$push' => [ "tasks" => $data->task]]
+        );
     }
 
     /**
@@ -37,7 +43,19 @@ class BoardResource extends AbstractResourceListener
      */
     public function delete($id)
     {
-        return new ApiProblem(405, 'The DELETE method has not been defined for individual resources');
+        $collection = $this->mongo->trello->test;
+
+        $res = $collection->updateMany(
+            [],
+            ['$pull' => ['tasks' => ['id' => $id]]]
+        );
+
+        $test = $res->getModifiedCount();
+        if ($test == "0") {
+            return false;
+        } elseif ($test == "1") {
+            return true;
+        }
     }
 
     /**
@@ -59,7 +77,19 @@ class BoardResource extends AbstractResourceListener
      */
     public function fetch($id)
     {
-        return new ApiProblem(405, 'The GET method has not been defined for individual resources');
+        $collection = $this->mongo->trello->test;
+
+        $res = $collection->find();
+
+        foreach ($res as $cur) {
+            $data = json_decode(json_encode($cur));
+            foreach ($data->tasks as $task) {
+                if ($task->id == $id) {
+                    $array = json_decode(json_encode($task), true);
+                    return $array;
+                }
+            }
+        }
     }
 
     /**
@@ -70,33 +100,7 @@ class BoardResource extends AbstractResourceListener
      */
     public function fetchAll($params = [])
     {
-        $collection = $this->mongo->trello->test;
-
-        $res = $collection->find();
-
-        $columns = [];
-
-        foreach ($res as $kek) {
-            $object = new stdClass();
-            $test = $kek->jsonSerialize();
-            $object->name = $test->name;
-            $object->id = $test->id;
-            $idk = $test->tasks->jsonSerialize();
-            if (empty($idk)) {
-                $object->tasks = [];
-            }
-            foreach ($idk as $kek2) {
-                $idk2 = new stdClass();
-                $idk2->{"name"} = $kek2->jsonSerialize()->name;
-                $idk2->{"description"} = $kek2->jsonSerialize()->description;
-                $idk2->{"id"} = $kek2->jsonSerialize()->id;
-                $array[] = $idk2;
-                $object->tasks = $array;
-            }
-            unset($array);
-            $columns[] = $object;
-        }
-        return $columns;
+        return new ApiProblem(405, 'The GET method has not been defined for collections');
     }
 
     /**
@@ -108,7 +112,13 @@ class BoardResource extends AbstractResourceListener
      */
     public function patch($id, $data)
     {
-        return new ApiProblem(405, 'The PATCH method has not been defined for individual resources');
+        $collection = $this->mongo->trello->test;
+
+        $collection->updateOne(
+            ['tasks.id' => $id],
+            ['$set' => ['tasks.$.' . $data->field => $data->val]]
+        );
+
     }
 
     /**

@@ -31,4 +31,5 @@ return [
     'ZfrCors',
     'Application',
     'Status',
+    'trello',
 ];

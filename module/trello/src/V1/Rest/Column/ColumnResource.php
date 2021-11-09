@@ -1,17 +1,16 @@
 <?php
-namespace Status\V1\Rest\Test;
+namespace trello\V1\Rest\Column;
 
-use http\Header;
 use Laminas\ApiTools\ApiProblem\ApiProblem;
 use Laminas\ApiTools\Rest\AbstractResourceListener;
 use MongoDB\Client as Mongo;
-use stdClass;
 
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Origin: *");
 
-class TestResource extends AbstractResourceListener
+class ColumnResource extends AbstractResourceListener
 {
+
     private $mongo;
 
     public function __construct() {
@@ -28,14 +27,12 @@ class TestResource extends AbstractResourceListener
     {
         $collection = $this->mongo->trello->test;
 
-        if ($data->aufgabe == "createColumn") {
-            $collection->insertMany([
-                $data->name,
-                $data->tasks
-            ]);
-        } elseif ($data->aufgabe == "deleteColumn") {
-            $collection->deleteOne(["name" => $data->name]);
-        }
+        $collection->insertOne([
+            "id" => $data->id,
+            "name" => $data->name,
+            "tasks" => []
+        ]);
+
     }
 
     /**
@@ -48,13 +45,7 @@ class TestResource extends AbstractResourceListener
     {
         $collection = $this->mongo->trello->test;
 
-        $res = $collection->updateMany(
-            [],
-            ['$pull' => ['tasks' => ['id' => $id]]]
-        );
-
-        print_r($res);
-
+        $collection->deleteOne(['id' => $id]);
 
         return true;
     }
@@ -67,7 +58,7 @@ class TestResource extends AbstractResourceListener
      */
     public function deleteList($data)
     {
-        return new ApiProblem(405, 'The DELETE method has not been defined for lists');
+        return new ApiProblem(405, 'The DELETE method has not been defined for collections');
     }
 
     /**
@@ -80,26 +71,11 @@ class TestResource extends AbstractResourceListener
     {
         $collection = $this->mongo->trello->test;
 
-        $res = $collection->find(['name' => $id]);
+        $res = $collection->findOne(["id" => $id]);
 
-        $columns = [];
+        $out = $res->jsonSerialize();
 
-        foreach ($res as $kek) {
-            $object = new stdClass();
-            $test = $kek->jsonSerialize();
-            $object->name = $test->name;
-            $idk = $test->tasks->jsonSerialize();
-            foreach ($idk as $kek2) {
-                $idk2 = $kek2->jsonSerialize()->name;
-                $array[] = $idk2;
-                $object->tasks = $array;
-            }
-            unset($array);
-            $columns[] = $object;
-        }
-        return $columns;
-
-
+        return $out;
     }
 
     /**
@@ -110,32 +86,7 @@ class TestResource extends AbstractResourceListener
      */
     public function fetchAll($params = [])
     {
-        $collection = $this->mongo->trello->test;
-
-        $res = $collection->find();
-
-
-        $columns = [];
-
-        foreach ($res as $kek) {
-            $object = new stdClass();
-            $test = $kek->jsonSerialize();
-            $object->name = $test->name;
-            $idk = $test->tasks->jsonSerialize();
-            foreach ($idk as $kek2) {
-                $idk2 = new stdClass();
-                $idk2->{"name"} = $kek2->jsonSerialize()->name;
-                $idk2->{"description"} = $kek2->jsonSerialize()->description;
-                $idk2->{"id"} = $kek2->jsonSerialize()->id;
-                $array[] = $idk2;
-                $object->tasks = $array;
-            }
-            unset($array);
-            $columns[] = $object;
-        }
-        return $columns;
-
-
+        return new ApiProblem(405, 'The GET method has not been defined for collections');
     }
 
     /**
@@ -169,7 +120,11 @@ class TestResource extends AbstractResourceListener
      */
     public function replaceList($data)
     {
-        return new ApiProblem(405, 'The PUT method has not been defined for collections');
+        $collection = $this->mongo->trello->test;
+
+        $collection->drop();
+        $this->mongo->trello->createCollection('test');
+        $collection->insertMany(json_decode(json_encode($data)));
     }
 
     /**
@@ -181,7 +136,6 @@ class TestResource extends AbstractResourceListener
      */
     public function update($id, $data)
     {
-
         $collection = $this->mongo->trello->test;
 
         $collection->updateOne(

@@ -31,7 +31,8 @@
         "laminas/laminas-development-mode": "^3.2",
         "laminas/laminas-zendframework-bridge": "^1.0",
         "mongodb/mongodb": "^1.9",
-        "zfr/zfr-cors": "1.*"
+        "zfr/zfr-cors": "1.*",
+      "ext-json": "*"
     },
     "require-dev": {
         "laminas-api-tools/api-tools-admin": "^1.6",

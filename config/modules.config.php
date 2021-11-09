@@ -30,6 +30,5 @@ return [
     'StatusLib',
     'ZfrCors',
     'Application',
-    'Status',
-    'trello',
+    25 => 'trello',
 ];
