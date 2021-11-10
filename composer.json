@@ -32,7 +32,9 @@
         "laminas/laminas-zendframework-bridge": "^1.0",
         "mongodb/mongodb": "^1.9",
         "zfr/zfr-cors": "1.*",
-      "ext-json": "*"
+        "ext-json": "*",
+        "laminas-api-tools/api-tools-oauth2": "*",
+        "alcaeus/mongo-php-adapter": "*"
     },
     "require-dev": {
         "laminas-api-tools/api-tools-admin": "^1.6",
