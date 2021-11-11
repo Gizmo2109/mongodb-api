@@ -136,33 +136,19 @@ class BoardResource extends AbstractResourceListener
      */
     public function fetchAll($params = [])
     {
-        $collection = $this->mongo->trello->test;
+        $collection = $this->mongo->trello;
 
-        $res = $collection->find();
+        $res = $collection->listCollectionNames();
 
-        $columns = [];
-
-        foreach ($res as $kek) {
-            $object       = new stdClass();
-            $test         = $kek->jsonSerialize();
-            $object->name = $test->name;
-            $object->id   = $test->id;
-            $idk          = $test->tasks->jsonSerialize();
-            if (empty($idk)) {
-                $object->tasks = [];
-            }
-            foreach ($idk as $kek2) {
-                $idk2                  = new stdClass();
-                $idk2->{"name"}        = $kek2->jsonSerialize()->name;
-                $idk2->{"description"} = $kek2->jsonSerialize()->description;
-                $idk2->{"id"}          = $kek2->jsonSerialize()->id;
-                $array[]               = $idk2;
-                $object->tasks         = $array;
-            }
-            unset($array);
-            $columns[] = $object;
+        $c = [];
+        foreach ($res as $p) {
+            array_push($c, $p);
         }
-        return $columns;
+        $m = new stdClass();
+
+        $m->boards = $c;
+
+        return $m;
     }
 
     /**
