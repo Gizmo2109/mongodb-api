@@ -16,6 +16,7 @@ use function in_array;
 use function json_decode;
 use function json_encode;
 use function substr;
+use function var_dump;
 
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Origin: *");
@@ -93,7 +94,11 @@ class BoardResource extends AbstractResourceListener
             array_push($o, $i);
         }
 
-        $finalFinal = array_intersect($final, $o);
+        if ($final !== '*') {
+            $finalFinal = array_intersect($final, $o);
+        } else {
+            $finalFinal = $o;
+        }
 
         if (in_array($id, $finalFinal)) {
             $collection = $this->mongo->trello->$id;
@@ -101,6 +106,8 @@ class BoardResource extends AbstractResourceListener
             $res = $collection->find();
 
             $columns = [];
+
+            var_dump($res);
 
             foreach ($res as $kek) {
                 $object       = new stdClass();
@@ -122,8 +129,9 @@ class BoardResource extends AbstractResourceListener
                 unset($array);
                 $columns[] = $object;
             }
-            $return       = new stdClass();
-            $return->test = $columns;
+            $return      = new stdClass();
+            $return->col = $columns;
+            //$return->name = $res->name;
             return $return;
         }
     }
@@ -136,17 +144,38 @@ class BoardResource extends AbstractResourceListener
      */
     public function fetchAll($params = [])
     {
-        $collection = $this->mongo->trello;
+        $keyVor = getallheaders();
 
-        $res = $collection->listCollectionNames();
+        $key = substr($keyVor["Authorization"], 7);
 
-        $c = [];
-        foreach ($res as $p) {
-            array_push($c, $p);
+        $collection = $this->mongo->auth->oauth_access_tokens;
+
+        $result = $collection->findOne(['access_token' => $key]);
+
+        $user = json_decode(json_encode($result))->user_id;
+
+        $collection = $this->mongo->auth->user_boards;
+
+        $result = $collection->findOne(['user' => $user]);
+
+        $final = json_decode(json_encode($result))->boards;
+
+        $test  = $this->mongo->trello;
+        $test2 = $test->listCollectionNames();
+        $o     = [];
+        foreach ($test2 as $i) {
+            array_push($o, $i);
         }
+
+        if ($final !== '*') {
+            $finalFinal = array_intersect($final, $o);
+        } else {
+            $finalFinal = $o;
+        }
+
         $m = new stdClass();
 
-        $m->boards = $c;
+        $m->boards = $finalFinal;
 
         return $m;
     }

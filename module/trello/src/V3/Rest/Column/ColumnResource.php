@@ -1,20 +1,27 @@
 <?php
+
+declare(strict_types=1);
+
 namespace trello\V3\Rest\Column;
 
 use Laminas\ApiTools\ApiProblem\ApiProblem;
 use Laminas\ApiTools\Rest\AbstractResourceListener;
 use MongoDB\Client as Mongo;
 
+use function header;
+use function json_decode;
+use function json_encode;
+
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Origin: *");
 
 class ColumnResource extends AbstractResourceListener
 {
-
     private $mongo;
 
-    public function __construct() {
-        $this->mongo = new Mongo("mongodb://admin:password@localhost:27017");;
+    public function __construct()
+    {
+        $this->mongo = new Mongo("mongodb://admin:password@localhost:27017");
     }
 
     /**
@@ -25,14 +32,14 @@ class ColumnResource extends AbstractResourceListener
      */
     public function create($data)
     {
-        $collection = $this->mongo->trello->test;
+        $board = $data->board;
+        $collection = $this->mongo->trello->$board;
 
         $collection->insertOne([
-            "id" => $data->id,
-            "name" => $data->name,
-            "tasks" => []
+            "id"    => $data->dat->id,
+            "name"  => $data->dat->name,
+            "tasks" => [],
         ]);
-
     }
 
     /**
@@ -73,9 +80,7 @@ class ColumnResource extends AbstractResourceListener
 
         $res = $collection->findOne(["id" => $id]);
 
-        $out = $res->jsonSerialize();
-
-        return $out;
+        return $res->jsonSerialize();
     }
 
     /**
@@ -139,8 +144,8 @@ class ColumnResource extends AbstractResourceListener
         $collection = $this->mongo->trello->test;
 
         $collection->updateOne(
-            [ "name" => $id],
-            [ '$push' => [ "tasks" => $data]]
+            ["name" => $id],
+            ['$push' => ["tasks" => $data]]
         );
     }
 }
