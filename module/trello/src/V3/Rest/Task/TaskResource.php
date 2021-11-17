@@ -1,10 +1,16 @@
 <?php
+
+declare(strict_types=1);
+
 namespace trello\V3\Rest\Task;
 
 use Laminas\ApiTools\ApiProblem\ApiProblem;
 use Laminas\ApiTools\Rest\AbstractResourceListener;
 use MongoDB\Client as Mongo;
-use stdClass;
+
+use function header;
+use function json_decode;
+use function json_encode;
 
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Origin: *");
@@ -12,11 +18,11 @@ header("Access-Control-Allow-Methods: *");
 
 class TaskResource extends AbstractResourceListener
 {
-
     private $mongo;
 
-    public function __construct() {
-        $this->mongo = new Mongo("mongodb://admin:password@localhost:27017");;
+    public function __construct()
+    {
+        $this->mongo = new Mongo("mongodb://admin:password@localhost:27017");
     }
 
     /**
@@ -30,8 +36,8 @@ class TaskResource extends AbstractResourceListener
         $collection = $this->mongo->trello->test;
 
         $collection->updateOne(
-          ["id" => $data->id],
-          ['$push' => [ "tasks" => $data->task]]
+            ["id" => $data->id],
+            ['$push' => ["tasks" => $data->task]]
         );
     }
 
@@ -85,8 +91,7 @@ class TaskResource extends AbstractResourceListener
             $data = json_decode(json_encode($cur));
             foreach ($data->tasks as $task) {
                 if ($task->id == $id) {
-                    $array = json_decode(json_encode($task), true);
-                    return $array;
+                    return json_decode(json_encode($task), true);
                 }
             }
         }
@@ -118,7 +123,6 @@ class TaskResource extends AbstractResourceListener
             ['tasks.id' => $id],
             ['$set' => ['tasks.$.' . $data->field => $data->val]]
         );
-
     }
 
     /**

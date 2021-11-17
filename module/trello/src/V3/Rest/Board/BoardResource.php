@@ -16,7 +16,6 @@ use function in_array;
 use function json_decode;
 use function json_encode;
 use function substr;
-use function var_dump;
 
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Origin: *");
@@ -71,6 +70,7 @@ class BoardResource extends AbstractResourceListener
      */
     public function fetch($id)
     {
+        //User anhand von Auth key
         $keyVor = getallheaders();
 
         $key = substr($keyVor["Authorization"], 7);
@@ -81,59 +81,24 @@ class BoardResource extends AbstractResourceListener
 
         $user = json_decode(json_encode($result))->user_id;
 
+        //User berechtigte Boards
         $collection = $this->mongo->auth->user_boards;
 
         $result = $collection->findOne(['user' => $user]);
 
-        $final = json_decode(json_encode($result))->boards;
+        $berBoards = json_decode(json_encode($result))->boards;
 
-        $test  = $this->mongo->trello;
-        $test2 = $test->listCollectionNames();
-        $o     = [];
-        foreach ($test2 as $i) {
-            array_push($o, $i);
+        if (! in_array($id, $berBoards) && $berBoards[0] !== "*") {
+            return false;
         }
 
-        if ($final !== '*') {
-            $finalFinal = array_intersect($final, $o);
-        } else {
-            $finalFinal = $o;
-        }
+        $collection = $this->mongo->trello->boards;
 
-        if (in_array($id, $finalFinal)) {
-            $collection = $this->mongo->trello->$id;
+        $find = $collection->find(['name' => $id])->toArray();
 
-            $res = $collection->find();
+        $test = json_decode(json_encode($find), true);
 
-            $columns = [];
-
-            var_dump($res);
-
-            foreach ($res as $kek) {
-                $object       = new stdClass();
-                $test         = $kek->jsonSerialize();
-                $object->name = $test->name;
-                $object->id   = $test->id;
-                $idk          = $test->tasks->jsonSerialize();
-                if (empty($idk)) {
-                    $object->tasks = [];
-                }
-                foreach ($idk as $kek2) {
-                    $idk2                  = new stdClass();
-                    $idk2->{"name"}        = $kek2->jsonSerialize()->name;
-                    $idk2->{"description"} = $kek2->jsonSerialize()->description;
-                    $idk2->{"id"}          = $kek2->jsonSerialize()->id;
-                    $array[]               = $idk2;
-                    $object->tasks         = $array;
-                }
-                unset($array);
-                $columns[] = $object;
-            }
-            $return      = new stdClass();
-            $return->col = $columns;
-            //$return->name = $res->name;
-            return $return;
-        }
+        return $test[0];
     }
 
     /**
@@ -160,14 +125,15 @@ class BoardResource extends AbstractResourceListener
 
         $final = json_decode(json_encode($result))->boards;
 
-        $test  = $this->mongo->trello;
-        $test2 = $test->listCollectionNames();
+        $test  = $this->mongo->trello->boards;
+        $test2 = $test->find([], ['projection' => ['name' => 1, '_id' => 0]])->toArray();
+        $test3 = json_decode(json_encode($test2));
         $o     = [];
-        foreach ($test2 as $i) {
-            array_push($o, $i);
+        foreach ($test3 as $i) {
+            array_push($o, $i->name);
         }
 
-        if ($final !== '*') {
+        if ($final[0] !== '*') {
             $finalFinal = array_intersect($final, $o);
         } else {
             $finalFinal = $o;

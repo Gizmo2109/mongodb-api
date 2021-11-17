@@ -9,8 +9,10 @@ use Laminas\ApiTools\Rest\AbstractResourceListener;
 use MongoDB\Client as Mongo;
 
 use function header;
+use function intval;
 use function json_decode;
 use function json_encode;
+use function var_dump;
 
 header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Origin: *");
@@ -32,14 +34,9 @@ class ColumnResource extends AbstractResourceListener
      */
     public function create($data)
     {
-        $board = $data->board;
-        $collection = $this->mongo->trello->$board;
+        $collection = $this->mongo->trello->boards;
 
-        $collection->insertOne([
-            "id"    => $data->dat->id,
-            "name"  => $data->dat->name,
-            "tasks" => [],
-        ]);
+        $collection->updateOne(['name' => $data->board], ['$push' => ['columns' => $data->data]]);
     }
 
     /**
@@ -50,9 +47,9 @@ class ColumnResource extends AbstractResourceListener
      */
     public function delete($id)
     {
-        $collection = $this->mongo->trello->test;
+        $collection = $this->mongo->trello->boards;
 
-        $collection->deleteOne(['id' => $id]);
+        $collection->updateMany([], ['$pull' => ['columns' => ['id' => intval($id)]]]);
 
         return true;
     }
@@ -76,11 +73,13 @@ class ColumnResource extends AbstractResourceListener
      */
     public function fetch($id)
     {
-        $collection = $this->mongo->trello->test;
+        $collection = $this->mongo->trello->boards;
 
-        $res = $collection->findOne(["id" => $id]);
+        $res = $collection->findOne(['columns.id' => intval($id)]);
 
-        return $res->jsonSerialize();
+        $res = json_decode(json_encode($res));
+
+        return $res->columns;
     }
 
     /**
@@ -125,11 +124,13 @@ class ColumnResource extends AbstractResourceListener
      */
     public function replaceList($data)
     {
-        $collection = $this->mongo->trello->test;
+        $collection = $this->mongo->trello->boards;
 
-        $collection->drop();
-        $this->mongo->trello->createCollection('test');
-        $collection->insertMany(json_decode(json_encode($data)));
+        var_dump($data);
+
+        //$collection->drop();
+        //$this->mongo->trello->createCollection('test');
+        //$collection->insertMany(json_decode(json_encode($data)));
     }
 
     /**
